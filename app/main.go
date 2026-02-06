@@ -16,9 +16,28 @@ func main() {
 		os.Exit(1)
 	}
 
-	_, err = l.Accept()
+	// Accepts the connection
+	conn, err := l.Accept()
 	if err != nil {
 		fmt.Println("Error accepting connection: ", err.Error())
 		os.Exit(1)
 	}
+
+	// Always close your connections!
+	// Used defer means, it works after the function returns
+	// benifit of placing this statement here is in case of error as well
+	// the connection will be closed.
+	defer conn.Close()
+
+	// construct the row HTTP response string
+	// Each line end with \r\n (CRLF)
+	response := "HTTP/1.1 200 OK\r\n"
+
+	// Write the response to the connection
+	_, err = conn.Write([]byte(response))
+
+	if err != nil {
+		fmt.Println("Error writing to connection: ", err.Error())
+	}
+
 }
