@@ -31,7 +31,7 @@ func main() {
 
 	// construct the row HTTP response string
 	// Each line end with \r\n (CRLF)
-	response := "HTTP/1.1 200 OK\r\n"
+	response := "HTTP/1.1 200 OK\r\n\r\n"
 
 	// Write the response to the connection
 	_, err = conn.Write([]byte(response))
