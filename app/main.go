@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func handleRequest(conn net.Conn) {
+func handleRequest(conn net.Conn, directory string) {
 	// Always close your connections!
 	// Used defer means, it works after the function returns
 	// benifit of placing this statement here is in case of error as well
@@ -49,6 +49,20 @@ func handleRequest(conn net.Conn) {
 			len(request.UserAgent()),
 			request.UserAgent(),
 		)
+	case strings.HasPrefix(path, "/files/"):
+		filePath := directory + path[7:]
+		content, err := os.ReadFile(filePath)
+
+		if err != nil {
+			response = []byte("HTTP/1.1 404 Not Found\r\n\r\n")
+		} else {
+			response = fmt.Appendf(
+				nil,
+				"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s",
+				len(content),
+				string(content),
+			)
+		}
 	default:
 		response = []byte("HTTP/1.1 404 Not Found\r\n\r\n")
 	}
@@ -70,6 +84,10 @@ func main() {
 		os.Exit(1)
 	}
 
+	args := os.Args[1:]
+
+	directory := args[1]
+
 	for {
 		// Accepts the connection
 		conn, err := l.Accept()
@@ -78,6 +96,6 @@ func main() {
 			os.Exit(1)
 		}
 
-		go handleRequest(conn)
+		go handleRequest(conn, directory)
 	}
 }
