@@ -58,7 +58,7 @@ func handleRequest(conn net.Conn, directory string) {
 		} else {
 			response = fmt.Appendf(
 				nil,
-				"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s",
+				"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: %d\r\n\r\n%s",
 				len(content),
 				string(content),
 			)
