@@ -75,6 +75,14 @@ func handleRequest(conn net.Conn, directory string) {
 	}
 }
 func main() {
+	// To take the directory as input for getting files
+	args := os.Args
+	directory := ""
+
+	if len(args) > 1 {
+		directory = args[2]
+	}
+
 	// You can use print statements as follows for debugging, they'll be visible when running tests.
 	fmt.Println("Logs from your program will appear here!")
 
@@ -83,13 +91,6 @@ func main() {
 		fmt.Println("Failed to bind to port 4221")
 		os.Exit(1)
 	}
-	args := os.Args
-
-	fmt.Println(len(args))
-	fmt.Println(args[0])
-	fmt.Println(args)
-
-	directory := args[2]
 
 	for {
 		// Accepts the connection
