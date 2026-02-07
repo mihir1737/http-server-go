@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"net"
+	"net/http"
 	"os"
 )
 
@@ -29,9 +31,26 @@ func main() {
 	// the connection will be closed.
 	defer conn.Close()
 
+	// wrap the connection in a buffered reader
+	reader := bufio.NewReader(conn)
+
+	// Parse the request
+	request, err := http.ReadRequest(reader)
+
+	if err != nil {
+		fmt.Println("Error parsing the request.", err)
+	}
+
 	// construct the row HTTP response string
 	// Each line end with \r\n (CRLF)
-	response := "HTTP/1.1 200 OK\r\n\r\n"
+
+	var response []byte
+
+	if request.RequestURI == "/index.html" {
+		response = []byte("HTTP/1.1 200 OK\r\n\r\n")
+	} else {
+		response = []byte("HTTP/1.1 404 Not Found\r\n\r\n")
+	}
 
 	// Write the response to the connection
 	_, err = conn.Write([]byte(response))
