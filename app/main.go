@@ -60,6 +60,13 @@ func main() {
 			len(echoStr),
 			echoStr,
 		)
+	case path == "/user-agent":
+		response = fmt.Appendf(
+			nil,
+			"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s",
+			len(request.UserAgent()),
+			request.UserAgent(),
+		)
 	default:
 		response = []byte("HTTP/1.1 404 Not Found\r\n\r\n")
 	}
