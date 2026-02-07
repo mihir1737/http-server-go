@@ -56,7 +56,7 @@ func main() {
 		echoStr := path[6:]
 		response = fmt.Appendf(
 			nil,
-			"HTTP/1.1 200 OK\r\nContent-Length: %d\r\n\r\n%s",
+			"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s",
 			len(echoStr),
 			echoStr,
 		)
