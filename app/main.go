@@ -46,7 +46,7 @@ func main() {
 
 	var response []byte
 
-	if request.RequestURI == "/index.html" {
+	if request.RequestURI == "/index.html" || request.RequestURI == "/" {
 		response = []byte("HTTP/1.1 200 OK\r\n\r\n")
 	} else {
 		response = []byte("HTTP/1.1 404 Not Found\r\n\r\n")
