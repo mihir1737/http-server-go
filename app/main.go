@@ -83,10 +83,13 @@ func main() {
 		fmt.Println("Failed to bind to port 4221")
 		os.Exit(1)
 	}
-	fmt.Println(os.Args[0])
+	args := os.Args
 
-	arg := os.Args[0]
-	directory := strings.Split(arg, " ")[2]
+	fmt.Println(len(args))
+	fmt.Println(args[0])
+	fmt.Println(args)
+
+	directory := args[2]
 
 	for {
 		// Accepts the connection
