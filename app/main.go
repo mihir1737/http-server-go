@@ -49,6 +49,25 @@ func handleRequest(conn net.Conn, directory string) {
 			len(request.UserAgent()),
 			request.UserAgent(),
 		)
+	case strings.HasPrefix(path, "/files/") && request.Method == "POST":
+
+		contentLength := request.ContentLength
+		contentBytes := make([]byte, contentLength)
+
+		_, err := request.Body.Read(contentBytes)
+
+		if err != nil {
+			response = []byte("HTTP/1.1 500 Interal server Error\r\n\r\n")
+		}
+
+		filePath := directory + path[7:]
+		err = os.WriteFile(filePath, contentBytes, 0644)
+
+		if err != nil {
+			response = []byte("HTTP/1.1 500 Interal server\r\n\r\n")
+		} else {
+			response = []byte("HTTP/1.1 201 Created\r\n\r\n\r\n\r\n%s")
+		}
 	case strings.HasPrefix(path, "/files/"):
 		filePath := directory + path[7:]
 		content, err := os.ReadFile(filePath)
