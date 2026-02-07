@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -46,9 +47,20 @@ func main() {
 
 	var response []byte
 
-	if request.RequestURI == "/index.html" || request.RequestURI == "/" {
+	path := request.URL.Path
+
+	switch {
+	case path == "/index.html" || path == "/":
 		response = []byte("HTTP/1.1 200 OK\r\n\r\n")
-	} else {
+	case strings.HasPrefix(path, "/echo/"):
+		echoStr := path[6:]
+		response = fmt.Appendf(
+			nil,
+			"HTTP/1.1 200 OK\r\nContent-Length: %d\r\n\r\n%s",
+			len(echoStr),
+			echoStr,
+		)
+	default:
 		response = []byte("HTTP/1.1 404 Not Found\r\n\r\n")
 	}
 
