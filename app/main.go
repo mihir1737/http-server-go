@@ -11,7 +11,9 @@ import (
 
 const supportedEncoding = "gzip"
 
-func handleEcho(request http.Request, response []byte, path string) {
+func handleEcho(request http.Request, path string) []byte {
+	var response []byte
+
 	echoStr := path[6:]
 
 	clientAcceptEncoding := request.Header.Get("Accept-Encoding")
@@ -34,9 +36,11 @@ func handleEcho(request http.Request, response []byte, path string) {
 			echoStr,
 		)
 	}
+	return response
 }
 
-func handlePostFile(request http.Request, response []byte, directory string, path string) {
+func handlePostFile(request http.Request, directory string, path string) []byte {
+	var response []byte
 	contentLength := request.ContentLength
 	contentBytes := make([]byte, contentLength)
 
@@ -54,9 +58,13 @@ func handlePostFile(request http.Request, response []byte, directory string, pat
 	} else {
 		response = []byte("HTTP/1.1 201 Created\r\n\r\n\r\n\r\n%s")
 	}
+
+	return response
 }
 
-func handleGetFile(response []byte, directory string, path string) {
+func handleGetFile(directory string, path string) []byte {
+	var response []byte
+
 	filePath := directory + path[7:]
 	content, err := os.ReadFile(filePath)
 
@@ -70,6 +78,8 @@ func handleGetFile(response []byte, directory string, path string) {
 			string(content),
 		)
 	}
+
+	return response
 }
 
 func handleRequest(conn net.Conn, directory string) {
@@ -108,13 +118,13 @@ func handleRequest(conn net.Conn, directory string) {
 		)
 
 	case strings.HasPrefix(path, "/echo/"):
-		handleEcho(*request, response, path)
+		response = handleEcho(*request, path)
 
 	case strings.HasPrefix(path, "/files/") && request.Method == "POST":
-		handlePostFile(*request, response, directory, path)
+		response = handlePostFile(*request, directory, path)
 
 	case strings.HasPrefix(path, "/files/"):
-		handleGetFile(response, directory, path)
+		response = handleGetFile(directory, path)
 
 	default:
 		response = []byte("HTTP/1.1 404 Not Found\r\n\r\n")
