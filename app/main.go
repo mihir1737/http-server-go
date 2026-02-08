@@ -119,7 +119,7 @@ func handleRequest(conn net.Conn, directory string) {
 	// Used defer means, it works after the function returns
 	// benifit of placing this statement here is in case of error as well
 	// the connection will be closed.
-	defer conn.Close()
+	// defer conn.Close()
 
 	// wrap the connection in a buffered reader
 	reader := bufio.NewReader(conn)
