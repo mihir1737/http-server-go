@@ -9,12 +9,76 @@ import (
 	"strings"
 )
 
+const supportedEncoding = "gzip"
+
+func handleEcho(request http.Request, response []byte, path string) {
+	echoStr := path[6:]
+
+	clientAcceptEncoding := request.Header.Get("Accept-Encoding")
+
+	if clientAcceptEncoding != "" {
+		if clientAcceptEncoding == supportedEncoding {
+			response = fmt.Appendf(
+				nil,
+				"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Encoding: %s\r\n\r\n",
+				clientAcceptEncoding,
+			)
+		} else {
+			response = []byte("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n")
+		}
+	} else {
+		response = fmt.Appendf(
+			nil,
+			"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s",
+			len(echoStr),
+			echoStr,
+		)
+	}
+}
+
+func handlePostFile(request http.Request, response []byte, directory string, path string) {
+	contentLength := request.ContentLength
+	contentBytes := make([]byte, contentLength)
+
+	_, err := request.Body.Read(contentBytes)
+
+	if err != nil {
+		response = []byte("HTTP/1.1 500 Interal server Error\r\n\r\n")
+	}
+
+	filePath := directory + path[7:]
+	err = os.WriteFile(filePath, contentBytes, 0644)
+
+	if err != nil {
+		response = []byte("HTTP/1.1 500 Interal server\r\n\r\n")
+	} else {
+		response = []byte("HTTP/1.1 201 Created\r\n\r\n\r\n\r\n%s")
+	}
+}
+
+func handleGetFile(response []byte, directory string, path string) {
+	filePath := directory + path[7:]
+	content, err := os.ReadFile(filePath)
+
+	if err != nil {
+		response = []byte("HTTP/1.1 404 Not Found\r\n\r\n")
+	} else {
+		response = fmt.Appendf(
+			nil,
+			"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: %d\r\n\r\n%s",
+			len(content),
+			string(content),
+		)
+	}
+}
+
 func handleRequest(conn net.Conn, directory string) {
 	// Always close your connections!
 	// Used defer means, it works after the function returns
 	// benifit of placing this statement here is in case of error as well
 	// the connection will be closed.
 	defer conn.Close()
+
 	// wrap the connection in a buffered reader
 	reader := bufio.NewReader(conn)
 
@@ -34,14 +98,7 @@ func handleRequest(conn net.Conn, directory string) {
 	switch {
 	case path == "/index.html" || path == "/":
 		response = []byte("HTTP/1.1 200 OK\r\n\r\n")
-	case strings.HasPrefix(path, "/echo/"):
-		echoStr := path[6:]
-		response = fmt.Appendf(
-			nil,
-			"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s",
-			len(echoStr),
-			echoStr,
-		)
+
 	case path == "/user-agent":
 		response = fmt.Appendf(
 			nil,
@@ -49,39 +106,16 @@ func handleRequest(conn net.Conn, directory string) {
 			len(request.UserAgent()),
 			request.UserAgent(),
 		)
+
+	case strings.HasPrefix(path, "/echo/"):
+		handleEcho(*request, response, path)
+
 	case strings.HasPrefix(path, "/files/") && request.Method == "POST":
+		handlePostFile(*request, response, directory, path)
 
-		contentLength := request.ContentLength
-		contentBytes := make([]byte, contentLength)
-
-		_, err := request.Body.Read(contentBytes)
-
-		if err != nil {
-			response = []byte("HTTP/1.1 500 Interal server Error\r\n\r\n")
-		}
-
-		filePath := directory + path[7:]
-		err = os.WriteFile(filePath, contentBytes, 0644)
-
-		if err != nil {
-			response = []byte("HTTP/1.1 500 Interal server\r\n\r\n")
-		} else {
-			response = []byte("HTTP/1.1 201 Created\r\n\r\n\r\n\r\n%s")
-		}
 	case strings.HasPrefix(path, "/files/"):
-		filePath := directory + path[7:]
-		content, err := os.ReadFile(filePath)
+		handleGetFile(response, directory, path)
 
-		if err != nil {
-			response = []byte("HTTP/1.1 404 Not Found\r\n\r\n")
-		} else {
-			response = fmt.Appendf(
-				nil,
-				"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: %d\r\n\r\n%s",
-				len(content),
-				string(content),
-			)
-		}
 	default:
 		response = []byte("HTTP/1.1 404 Not Found\r\n\r\n")
 	}
