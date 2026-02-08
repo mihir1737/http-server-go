@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"slices" // Required for slices.Contains
 	"strings"
 )
 
@@ -16,14 +17,17 @@ func handleEcho(request http.Request, path string) []byte {
 
 	echoStr := path[6:]
 
-	clientAcceptEncoding := request.Header.Get("Accept-Encoding")
+	clientAcceptEncodingsString := request.Header.Get("Accept-Encoding")
 
-	if clientAcceptEncoding != "" {
-		if clientAcceptEncoding == supportedEncoding {
+	if clientAcceptEncodingsString != "" {
+
+		clientAcceptEncodings := strings.Split(clientAcceptEncodingsString, ", ")
+
+		if slices.Contains(clientAcceptEncodings, supportedEncoding) {
 			response = fmt.Appendf(
 				nil,
 				"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Encoding: %s\r\n\r\n",
-				clientAcceptEncoding,
+				supportedEncoding,
 			)
 		} else {
 			response = []byte("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n")
