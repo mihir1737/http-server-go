@@ -2,6 +2,8 @@ package main
 
 import (
 	"bufio"
+	"bytes"
+	"compress/gzip"
 	"fmt"
 	"net"
 	"net/http"
@@ -11,6 +13,23 @@ import (
 )
 
 const supportedEncoding = "gzip"
+
+func compress(data []byte) ([]byte, error) {
+	var buf bytes.Buffer
+	gz := gzip.NewWriter(&buf)
+
+	if _, err := gz.Write(data); err != nil {
+		return nil, err
+	}
+
+	// IMP : Must close the writer to flush the remaining data
+	// and the gzip footer
+	if err := gz.Close(); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
 
 func handleEcho(request http.Request, path string) []byte {
 	var response []byte
@@ -24,11 +43,20 @@ func handleEcho(request http.Request, path string) []byte {
 		clientAcceptEncodings := strings.Split(clientAcceptEncodingsString, ", ")
 
 		if slices.Contains(clientAcceptEncodings, supportedEncoding) {
-			response = fmt.Appendf(
+			compressedData, err := compress([]byte(echoStr))
+			if err != nil {
+				response = []byte("HTTP/1.1 500 Interal server Error\r\n\r\n")
+			}
+
+			header := fmt.Appendf(
 				nil,
-				"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Encoding: %s\r\n\r\n",
+				"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Encoding: %s\r\nContent-Length: %d\r\n\r\n",
 				supportedEncoding,
+				len(compressedData),
 			)
+
+			response = append([]byte(header), compressedData...)
+
 		} else {
 			response = []byte("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n")
 		}
